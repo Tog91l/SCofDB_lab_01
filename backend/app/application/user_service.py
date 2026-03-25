@@ -1,34 +1,46 @@
-"""Доменная сущность пользователя."""
-import re
+"""Сервис для работы с пользователями."""
+
 import uuid
-from datetime import datetime
-from dataclasses import dataclass, field
-from .exceptions import InvalidEmailError
+from typing import Optional, List
+
+from app.domain.user import User
+from app.domain.exceptions import EmailAlreadyExistsError, UserNotFoundError
 
 
-# TODO: Реализовать класс User
-# - Использовать @dataclass
-# - Поля: email, name, id, created_at
-# - Реализовать валидацию email в __post_init__
-# - Regex: r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+class UserService:
+    """Сервис для операций с пользователями."""
 
-em_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
-def valid_email(email: str): 
-    email = email.strip()
-    if not email or not re.match(em_regex, email):
-        raise InvalidEmailError(email)
-    return email
+    def __init__(self, repo):
+        self.repo = repo
 
+    # TODO: Реализовать register(email, name) -> User
+    # 1. Проверить что email не занят
+    # 2. Создать User
+    # 3. Сохранить через repo.save()
+    async def register(self, email: str, name: str = "") -> User:
+        exist = await self.repo.find_by_email(email)
+        if exist:
+            raise EmailAlreadyExistsError(email)
+        user = User(email=email, name=name)
+        await self.repo.save(user)
+        return user
+        #raise NotImplementedError("TODO: Реализовать UserService.register")
 
+    # TODO: Реализовать get_by_id(user_id) -> User
+    async def get_by_id(self, user_id: uuid.UUID) -> User:
+        user = await self.repo.find_by_id(user_id)
+        if not user: 
+            raise UserNotFoundError(user_id)
 
-@dataclass
-class User:
-    email: str 
-    name: str = ""
-    id: uuid.UUID = field(default_factory=uuid.uuid4)
-    created_at: datetime = field(default_factory=datetime.now)
+        return user
+        #raise NotImplementedError("TODO: Реализовать UserService.get_by_id")
 
+    # TODO: Реализовать get_by_email(email) -> Optional[User]
+    async def get_by_email(self, email: str) -> Optional[User]:
+        return await self.repo.find_by_email(email)
+        #raise NotImplementedError("TODO: Реализовать UserService.get_by_email")
 
-    def __post_init__(self):
-        self.email = valid_email(self.email)
-
+    # TODO: Реализовать list_users() -> List[User]
+    async def list_users(self) -> List[User]:
+        return await self.repo.find_all()
+        #raise NotImplementedError("TODO: Реализовать UserService.list_users")
